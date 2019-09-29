@@ -1,4 +1,4 @@
-import { Interpolate } from 'math-utils';
+import { Interpolate } from 'math-util';
 
 /** Pseudo-random number generator. Should return values in the [0, 1) range equiprobably. */
 export type rng = () => number;
