@@ -10,10 +10,7 @@
         "test:run": "jest",
         "test:watch": "jest --watch",
         "test:coverage": "jest --collectCoverage",
-        "build": "tsc"
-    },
-    "dependencies": {
-        "math-utils": "bitbucket:Azleur/math-util"
+        "build": "rm -rf dist && tsc"
     },
     "devDependencies": {
         "@types/jest": "^24.0.18",
