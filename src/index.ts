@@ -14,7 +14,19 @@ export const GetDefaultGenerator: RngCreator = () => defaultGenerator;
 export const GetLCG: RngCreator = (seed?: number) => {
     const m = 1 << 31 - 1;
     const a = 48271;
-    let state = seed || 123456;
+    let state: number = 0;
+    if (seed) { // Undefined or 0, which would also be unusable as a seed.
+        state = seed;
+    } else {
+        // TODO: Test and review all this seeding. Maybe abstract into separate function.
+        const half = Math.floor(m / 2);
+        const timeSeed = Date.now() % half;
+        const jsSeed = a * Math.random() % half;
+        state = (timeSeed + jsSeed) % m;
+        if (state <= 0) {
+            state += (m - 1);
+        }
+    }
     return () => {
         state = (state * a) % m;
         return state / m; // This is probably statistically problematic.
@@ -89,7 +101,11 @@ export class RngProvider {
         }
     };
 
-    /** Returns */
+    /**
+     * Returns the result of a dice roll with the provided values.
+     *
+     * The underlying distribution is the sum of 'dice' independent discrete uniform random variables, each in the range [1, 'faces'].
+     */
     Dice = (dice: number, faces: number): number => {
         let accumulator = 0;
         for (let i = 0; i < dice; i++) {
@@ -98,7 +114,11 @@ export class RngProvider {
         return accumulator;
     };
 
-    // TODO: Check name is correct.
+    /**
+     * Returns a random number in the range [min, max), with bell-shaped probability distribution.
+     *
+     * Calculates a sample of the Bates distribution with parameter n, and then rescales it to the range [min, max).
+     */
     Bates = (min: number, max: number, n: number = 4) => {
         let accumulator = 0;
         for (let i = 0; i < n; i++) {

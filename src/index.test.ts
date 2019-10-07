@@ -1,9 +1,9 @@
-import { rng, GetDefaultGenerator, RngProvider } from '.';
+import { rng, GetDefaultGenerator, GetLCG, RngProvider } from '.';
 import { observe, validate } from 'statistics';
 
 const SAMPLES = 8000;
 
-test("rng returned by GetDefaultGenerator() returns uniform values in the range [0, 1)", () => {
+test("GetDefaultGenerator(): rng returns a random number generator that provides uniform values in the range [0, 1)", () => {
     const generator: rng = GetDefaultGenerator();
     let stats = observe(() => generator(), SAMPLES);
     expect(
@@ -11,7 +11,49 @@ test("rng returned by GetDefaultGenerator() returns uniform values in the range 
     ).toBe(true);
 });
 
-test('Bernoulli works as expected', () => {
+// TODO: Test LCG and seeding.
+test("GetLCG(seed?: number): rng returns a seeded linear congruential generator that provides uniform values in the range [0, 1)", () => {
+    const seeded1 = GetLCG(1234567);
+    const seeded2 = GetLCG(1234567);
+    const seeded3 = GetLCG(1234567);
+    const seeded4 = GetLCG(1234567);
+    const seeded5 = GetLCG(7654321);
+
+    const unseeded1 = GetLCG();
+    const unseeded2 = GetLCG();
+    const unseeded3 = GetLCG();
+
+    // LCG supplies uniform floats in [0, 1).
+    const stats1 = observe(seeded1, SAMPLES);
+    expect(
+        validate(stats1, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
+    ).toBe(true);
+
+    // Same seed returns same numbers.
+    for (let i = 0; i < SAMPLES; i++) {
+        expect(seeded2()).toBe(seeded3());
+    }
+
+    // Different seeds are uncorrelated.
+    const stats2 = observe(() => (seeded4() - seeded5()), SAMPLES);
+    expect(
+        validate(stats2, { tolerance: 0.1, mean: 0, min: -1, max: +1 })
+    ).toBe(true);
+
+    // Unseeded is also uniform in [0, 1).
+    const stats3 = observe(unseeded1, SAMPLES);
+    expect(
+        validate(stats3, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
+    ).toBe(true);
+
+    // Different unseeded values are uncorrelated.
+    const stats4 = observe(() => (unseeded2() - unseeded3()), SAMPLES);
+    expect(
+        validate(stats4, { tolerance: 0.1, mean: 0, min: -1, max: +1 })
+    ).toBe(true);
+});
+
+test('RngProvider.Bernoulli(p?: number): boolean implements the Bernoulli distribution with P(true)=p (default 0.5)', () => {
     const provider = new RngProvider();
     let stats = observe(() => (provider.Bernoulli() ? 1 : 0), SAMPLES);
     expect(
@@ -25,7 +67,7 @@ test('Bernoulli works as expected', () => {
     }
 });
 
-test('UniformInt variants work as expected', () => {
+test('RngProvider.UniformInt(?): number variants provide discrete uniform samples, with optional min and max settings', () => {
     // No params: [0, MAX_SAFE_INTEGER).
     const provider = new RngProvider();
     let stats = observe(() => provider.UniformInt(), SAMPLES);
@@ -74,7 +116,7 @@ test('UniformInt variants work as expected', () => {
     }
 });
 
-test('Uniform variants work as expected', () => {
+test('RngProvider.Uniform(?): number variants provide continuous uniform samples, with optional min and max settings', () => {
     // No params: [0, 1).
     const provider = new RngProvider();
     let stats = observe(() => provider.Uniform(), SAMPLES);
@@ -111,7 +153,7 @@ test('Uniform variants work as expected', () => {
     }
 });
 
-test('Dice works as expected', () => {
+test('RngProvider.Dice(dice: number, faces: number): number returns the result of rolling NdM, for N = dice, M = faces', () => {
     const provider = new RngProvider();
     for (let dice = 1; dice <= 5; dice++) {
         for (let faces = 1; faces <= 8; faces++) {
@@ -126,7 +168,7 @@ test('Dice works as expected', () => {
                         mean: (dice * (faces + 1)) / 2,
                         min: dice,
                         max: dice * faces,
-                        // variance?
+                        variance: dice * (faces * faces - 1) / 12
                     }
                 )
             ).toBe(true);
@@ -134,7 +176,7 @@ test('Dice works as expected', () => {
     }
 });
 
-test('Bates as expected', () => {
+test('RngProvider.Bates(min: number, max: number, n?: number): number returns a sample from the Bates distribution with parameter n, rescaled to [min, max)', () => {
     const provider = new RngProvider();
     for (let min = -2; min <= 7; min += 3) {
         for (let width = 1; width < 2.5; width += 0.5) {
