@@ -106,7 +106,7 @@ export class RngProvider {
      *
      * The underlying distribution is the sum of 'dice' independent discrete uniform random variables, each in the range [1, 'faces'].
      */
-    Dice = (dice: number, faces: number): number => {
+    Dice(dice: number, faces: number): number {
         let accumulator = 0;
         for (let i = 0; i < dice; i++) {
             accumulator += 1 + this.UniformInt(faces);
@@ -119,7 +119,7 @@ export class RngProvider {
      *
      * Calculates a sample of the Bates distribution with parameter n, and then rescales it to the range [min, max).
      */
-    Bates = (min: number, max: number, n: number = 4) => {
+    Bates(min: number, max: number, n: number = 4) {
         let accumulator = 0;
         for (let i = 0; i < n; i++) {
             accumulator += this.generator(); // Equiv. Uniform(0, 1).
