@@ -1,13 +1,13 @@
 import { rng, GetDefaultGenerator, GetLCG, RngProvider } from '.';
-import { observe, validate } from 'statistics';
+import { Observe, Validate } from '@azleur/stats';
 
 const SAMPLES = 8000;
 
 test("GetDefaultGenerator(): rng returns a random number generator that provides uniform values in the range [0, 1)", () => {
     const generator: rng = GetDefaultGenerator();
-    let stats = observe(() => generator(), SAMPLES);
+    let stats = Observe(() => generator(), SAMPLES);
     expect(
-        validate(stats, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
+        Validate(stats, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
     ).toBe(true);
 });
 
@@ -24,9 +24,9 @@ test("GetLCG(seed?: number): rng returns a seeded linear congruential generator 
     const unseeded3 = GetLCG();
 
     // LCG supplies uniform floats in [0, 1).
-    const stats1 = observe(seeded1, SAMPLES);
+    const stats1 = Observe(seeded1, SAMPLES);
     expect(
-        validate(stats1, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
+        Validate(stats1, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
     ).toBe(true);
 
     // Same seed returns same numbers.
@@ -35,34 +35,34 @@ test("GetLCG(seed?: number): rng returns a seeded linear congruential generator 
     }
 
     // Different seeds are uncorrelated.
-    const stats2 = observe(() => (seeded4() - seeded5()), SAMPLES);
+    const stats2 = Observe(() => (seeded4() - seeded5()), SAMPLES);
     expect(
-        validate(stats2, { tolerance: 0.1, mean: 0, min: -1, max: +1 })
+        Validate(stats2, { tolerance: 0.1, mean: 0, min: -1, max: +1 })
     ).toBe(true);
 
     // Unseeded is also uniform in [0, 1).
-    const stats3 = observe(unseeded1, SAMPLES);
+    const stats3 = Observe(unseeded1, SAMPLES);
     expect(
-        validate(stats3, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
+        Validate(stats3, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
     ).toBe(true);
 
     // Different unseeded values are uncorrelated.
-    const stats4 = observe(() => (unseeded2() - unseeded3()), SAMPLES);
+    const stats4 = Observe(() => (unseeded2() - unseeded3()), SAMPLES);
     expect(
-        validate(stats4, { tolerance: 0.1, mean: 0, min: -1, max: +1 })
+        Validate(stats4, { tolerance: 0.1, mean: 0, min: -1, max: +1 })
     ).toBe(true);
 });
 
 test('RngProvider.Bernoulli(p?: number): boolean implements the Bernoulli distribution with P(true)=p (default 0.5)', () => {
     const provider = new RngProvider();
-    let stats = observe(() => (provider.Bernoulli() ? 1 : 0), SAMPLES);
+    let stats = Observe(() => (provider.Bernoulli() ? 1 : 0), SAMPLES);
     expect(
-        validate(stats, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 0.25, })
+        Validate(stats, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 0.25, })
     ).toBe(true);
     for (let p = 0.1; p <= 0.9; p += 0.2) {
-        stats = observe(() => (provider.Bernoulli(p) ? 1 : 0), SAMPLES);
+        stats = Observe(() => (provider.Bernoulli(p) ? 1 : 0), SAMPLES);
         expect(
-            validate(stats, { tolerance: 0.1, mean: p, min: 0, max: 1, })
+            Validate(stats, { tolerance: 0.1, mean: p, min: 0, max: 1, })
         ).toBe(true); // No idea about variance.
     }
 });
@@ -70,7 +70,7 @@ test('RngProvider.Bernoulli(p?: number): boolean implements the Bernoulli distri
 test('RngProvider.UniformInt(?): number variants provide discrete uniform samples, with optional min and max settings', () => {
     // No params: [0, MAX_SAFE_INTEGER).
     const provider = new RngProvider();
-    let stats = observe(() => provider.UniformInt(), SAMPLES);
+    let stats = Observe(() => provider.UniformInt(), SAMPLES);
     // Positive values.
     expect(stats.mean >= 0).toBe(true);
     expect(stats.variance >= 0).toBe(true);
@@ -82,9 +82,9 @@ test('RngProvider.UniformInt(?): number variants provide discrete uniform sample
 
     // One param: [0, n).
     for (let n = 10; n < 30; n += 5) {
-        stats = observe(() => provider.UniformInt(n), SAMPLES);
+        stats = Observe(() => provider.UniformInt(n), SAMPLES);
         expect(
-            validate(
+            Validate(
                 stats,
                 { tolerance: 0.1 * n, mean: (n - 1) / 2, min: 0, max: n - 1, variance: (n * n - 1) / 12, }
             )
@@ -97,9 +97,9 @@ test('RngProvider.UniformInt(?): number variants provide discrete uniform sample
     for (let min = -20; min <= 20; min += 10) {
         for (let width = 4; width <= 19; width += 3) {
             let max = min + width;
-            stats = observe(() => provider.UniformInt(min, max), SAMPLES);
+            stats = Observe(() => provider.UniformInt(min, max), SAMPLES);
             expect(
-                validate(
+                Validate(
                     stats,
                     {
                         tolerance: 0.1 * width,
@@ -119,16 +119,16 @@ test('RngProvider.UniformInt(?): number variants provide discrete uniform sample
 test('RngProvider.Uniform(?): number variants provide continuous uniform samples, with optional min and max settings', () => {
     // No params: [0, 1).
     const provider = new RngProvider();
-    let stats = observe(() => provider.Uniform(), SAMPLES);
+    let stats = Observe(() => provider.Uniform(), SAMPLES);
     expect(
-        validate(stats, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
+        Validate(stats, { tolerance: 0.1, mean: 0.5, min: 0, max: 1, variance: 1 / 12, })
     ).toBe(true);
 
     // One param: [0, x).
     for (let x = 3.5; x <= 7.5; x += 2 / 3) {
-        stats = observe(() => provider.Uniform(x), SAMPLES);
+        stats = Observe(() => provider.Uniform(x), SAMPLES);
         expect(
-            validate(stats, { tolerance: 0.1 * x, mean: x / 2, min: 0, max: x, variance: x * x / 12, })
+            Validate(stats, { tolerance: 0.1 * x, mean: x / 2, min: 0, max: x, variance: x * x / 12, })
         ).toBe(true);
     }
 
@@ -136,9 +136,9 @@ test('RngProvider.Uniform(?): number variants provide continuous uniform samples
     for (let min = -6; min <= +6; min += 1.5) {
         for (let width = 1 / 3; width <= 5 / 3; width += 1 / 3) {
             let max = min + width;
-            stats = observe(() => provider.Uniform(min, max), SAMPLES);
+            stats = Observe(() => provider.Uniform(min, max), SAMPLES);
             expect(
-                validate(
+                Validate(
                     stats,
                     {
                         tolerance: 0.1 * width,
@@ -159,9 +159,9 @@ test('RngProvider.Dice(dice: number, faces: number): number returns the result o
         for (let faces = 1; faces <= 8; faces++) {
             let sample = provider.Dice(dice, faces);
             expect(Math.floor(sample)).toBe(sample); // Integers.
-            let stats = observe(() => provider.Dice(dice, faces), SAMPLES);
+            let stats = Observe(() => provider.Dice(dice, faces), SAMPLES);
             expect(
-                validate(
+                Validate(
                     stats,
                     {
                         tolerance: 0.1 * dice * faces,
@@ -182,9 +182,9 @@ test('RngProvider.Bates(min: number, max: number, n?: number): number returns a 
         for (let width = 1; width < 2.5; width += 0.5) {
             const max = min + width;
             for (let n = 1; n <= 4; n++) {
-                let stats = observe(() => provider.Bates(min, max, n), SAMPLES);
+                let stats = Observe(() => provider.Bates(min, max, n), SAMPLES);
                 expect(
-                    validate(
+                    Validate(
                         stats,
                         {
                             tolerance: 0.1 * width,
