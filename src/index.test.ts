@@ -199,3 +199,101 @@ test('RngProvider.Bates(min: number, max: number, n?: number): number returns a 
         }
     }
 });
+
+test('RngProvider.Pick(options) picks a random element from an array with uniform probability', () => {
+    const provider = new RngProvider();
+    const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    for (let i = 0; i < SAMPLES; i++) {
+        const x = provider.Pick(array);
+        expect(array.includes(x)).toBe(true);
+        count[x]++;
+    }
+
+    for (let i = 0; i < 10; i++) {
+        expect(count[i] / SAMPLES).toBeCloseTo(0.1, 1);
+    }
+});
+
+
+test('RngProvider.Pop(options) removes and returns a random element from an array with uniform probability', () => {
+    const provider = new RngProvider();
+    const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const count: number[][] = []; // count[i] is the histogram of the i-th returned numbers.
+    for (let j = 0; j < 4; j++) {
+        count.push([]);
+        for (let i = 0; i < 10; i++) {
+            count[j].push(0);
+        }
+    }
+
+    for (let i = 0; i < SAMPLES / 2; i++) {
+        const arr = [...array];
+        const found = [];
+        for (let j = 0; j < 4; j++) {
+            const x = provider.Pop(arr);
+            expect(array.includes(x)).toBe(true); // Returns an element of the array.
+            expect(arr.includes(x)).toBe(false); // It is removed.
+            expect(found.includes(x)).toBe(false); // It hadn't been returned yet.
+            count[j][x]++;
+            found.push(x);
+        }
+    }
+
+    for (let j = 0; j < 4; j++) { // On the j-th call to Pop()...
+        for (let i = 0; i < 10; i++) { // We received i...
+            expect(count[j][i] / (SAMPLES / 2)).toBeCloseTo(0.1, 1); // around 10% of the time.
+        }
+    }
+});
+
+test('RngProvider.PickWeighted(options, weights) picks a random element from an array with probability proportional to its weight', () => {
+    const provider = new RngProvider();
+    const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    for (let i = 0; i < SAMPLES; i++) {
+        const x = provider.PickWeighted(array, array);
+        expect(array.includes(x)).toBe(true);
+        count[x]++;
+    }
+
+    for (let i = 0; i < 10; i++) {
+        expect(count[i] / SAMPLES).toBeCloseTo(i / 45, 1);
+    }
+});
+
+test('RngProvider.Shuffle(values) implements in-place Fisher-Yates', () => {
+    const provider = new RngProvider();
+    const array = [0, 1, 2, 3];
+    const count: number[] = [];
+    for (let i = 0; i < 24; i++) count.push(0);
+
+    const factorial = (n: number): number => {
+        let accumulator = 1;
+        while (n > 1) accumulator *= n--;
+        return accumulator;
+    }
+
+    const increment = (sample: number[]) => {
+        let idx = 0;
+        for (let i = 0; i < 3; i++) {
+            let x = sample[i];
+            for (let j = 0; j < i; j++) {
+                if (sample[j] < sample[i]) x--;
+            }
+            idx += factorial(3 - i) * x;
+        }
+        count[idx]++;
+    };
+
+    for (let i = 0; i < SAMPLES; i++) {
+        const shuffled = [...array];
+        provider.Shuffle(shuffled);
+        increment(shuffled);
+        expect(shuffled.sort()).toEqual(array);
+    }
+
+    for (let i = 0; i < 24; i++) expect(count[i] / SAMPLES).toBeCloseTo(1 / 24, 1);
+});

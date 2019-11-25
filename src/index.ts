@@ -126,4 +126,58 @@ export class RngProvider {
         }
         return Interpolate(min, max, accumulator / n);
     };
+
+    /**
+     * Pick a random element from an array, with uniform probability.
+     *
+     * * The original array is preserved.
+     * * Will fail if array is empty.
+     */
+    Pick<T>(options: T[]): T {
+        const idx = this.UniformInt(options.length);
+        return options[idx];
+    }
+
+    /**
+     * Remove and return a random element from an array, with uniform probability.
+     *
+     * * The original array is modified.
+     * * Will fail if array is empty.
+     */
+    Pop<T>(options: T[]): T {
+        const idx = this.UniformInt(options.length);
+        return options.splice(idx, 1)[0];
+    }
+
+    /**
+     * Pick a random element from an array, with uniform probability.
+     *
+     * * The original array is preserved.
+     * * Will fail if any array is empty.
+     * * Will fail if arrays have different sizes.
+     */
+    PickWeighted<T>(options: T[], weights: number[]): T {
+        const totalWeight = weights.reduce((total, w) => total + w);
+        const threshold = this.Uniform(totalWeight);
+        let accumulated = 0;
+        for (let i = 0; i < options.length; i++) {
+            accumulated += weights[i];
+            if (threshold < accumulated) {
+                return options[i];
+            }
+        }
+        return options[options.length]; // This should never happen.
+    }
+
+    /**
+     * In-place random shuffle (all permutations equaly probable).
+     *
+     * Uses Fisher-Yates algorithm.
+     */
+    Shuffle<T>(values: T[]): void {
+        for (let i = values.length - 1; i > 0; i--) {
+            const j = this.UniformInt(0, i); // i inclusive.
+            [values[i], values[j]] = [values[j], values[i]];
+        }
+    }
 }
