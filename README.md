@@ -47,10 +47,11 @@ The class `RngProvider` is a wrapper around an `rng` that provides the following
 * `Bates(min, max, n?)` [(bounded bell)](https://en.wikipedia.org/wiki/Bates_distribution) uses a bell-shaped distribution that takes values in `[min, max]`. It is calculated by averaging `n` uniform distributions (default 4).
 * `Pick(options)` returns a random element from an array, with equal probability. It preserves the original array.
 * `Pop(options)` removes and returns a random element from an array, with equal probability.
+* `PickWeightedIndex(weights)` returns a random index in the range `[0, weights.length)` with probability of `i` proportional to `weights[i]`.
 * `PickWeighted(options, weights)` returns a random element from an array, with probability proportional to its weight. It preserves the original array.
 * `Shuffle(values)` randomly shuffles an array in-place.
 
-## Example
+## Examples
 
 ```typescript
 const rng = GetLCG(92740287); // Same seed => same results.
@@ -66,7 +67,8 @@ const bell = provider.Bates(8, 10); // Probably close to 9.
 const array = [0, 1, 2, 3];
 const entry = provider.Pick(array); // 0, 1, 2, or 3.
 const another = provider.Pop(array); // Now array is smaller.
+provider.PickWeightedIndex([1, 1, 4.5]); // 2 is more likely.
 provider.PickWeighted(['a', 'b', 'c'], [1, 1, 4.5]); // 'c' is more likely.
-const another = [4, 5, 6];
-provider.Shuffle(another); // Any re-ordering, e.g. [5, 4, 6].
+const remix = [4, 5, 6];
+provider.Shuffle(remix); // Any re-ordering, e.g. [5, 4, 6].
 ```

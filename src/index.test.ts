@@ -248,6 +248,22 @@ test('RngProvider.Pop(options) removes and returns a random element from an arra
     }
 });
 
+test('RngProvider.PickWeightedIndex(weights) picks a random index in the range [0, weights.length - 1], with P(i) proportional to weights[i]', () => {
+    const provider = new RngProvider();
+    const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const count = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+    for (let i = 0; i < SAMPLES; i++) {
+        const idx = provider.PickWeightedIndex(array);
+        expect(array.includes(idx)).toBe(true);
+        count[idx]++;
+    }
+
+    for (let i = 0; i < 10; i++) {
+        expect(count[i] / SAMPLES).toBeCloseTo(i / 45, 1);
+    }
+});
+
 test('RngProvider.PickWeighted(options, weights) picks a random element from an array with probability proportional to its weight', () => {
     const provider = new RngProvider();
     const array = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];

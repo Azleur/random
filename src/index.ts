@@ -142,7 +142,7 @@ export class RngProvider {
      * Remove and return a random element from an array, with uniform probability.
      *
      * * The original array is modified.
-     * * Will fail if array is empty.
+     * * Will fail if the array is empty.
      */
     Pop<T>(options: T[]): T {
         const idx = this.UniformInt(options.length);
@@ -150,23 +150,40 @@ export class RngProvider {
     }
 
     /**
-     * Pick a random element from an array, with uniform probability.
+     * Pick a random index from an array of weights.
+     *
+     * * The probability of i being picked is proportional to weights[i].
+     * * Negative weights will break things.
+     *
+     * @param weights List of positive numbers. Each one determines the probability of picking its index.
+     * @returns Index in range [0, weights.length - 1] (positive integer).
+     */
+    PickWeightedIndex(weights: number[]): number {
+        const total = weights.reduce((total, w) => total + w);
+        const threshold = this.Uniform(total);
+        let accumulated = 0;
+        for (let i = 0; i < weights.length; i++) {
+            accumulated += weights[i];
+            if (threshold < accumulated) {
+                return i;
+            }
+        }
+        console.error('This should never happen.');
+        return weights.length - 1; // This should never happen.
+    }
+
+    /**
+     * Pick a random element from options, with probability determined by weights.
+     *
+     * The probability of returning options[i] is proportional to weights[i].
      *
      * * The original array is preserved.
      * * Will fail if any array is empty.
-     * * Will fail if arrays have different sizes.
+     * * Will fail if the two arrays have different sizes.
      */
     PickWeighted<T>(options: T[], weights: number[]): T {
-        const totalWeight = weights.reduce((total, w) => total + w);
-        const threshold = this.Uniform(totalWeight);
-        let accumulated = 0;
-        for (let i = 0; i < options.length; i++) {
-            accumulated += weights[i];
-            if (threshold < accumulated) {
-                return options[i];
-            }
-        }
-        return options[options.length]; // This should never happen.
+        const idx = this.PickWeightedIndex(weights);
+        return options[idx];
     }
 
     /**
